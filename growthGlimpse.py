@@ -1,9 +1,11 @@
-# %%
+#%%
 # -*- coding: utf-8 -*-
 """
-Python 3.6
-Worked in Spyder, VS code 1.35.1 in python interactive mode
-@ Hai
+@Author: Hai
+The script works on Python >= 3.6 and requires pandas, matplotlib, numpy and scipy to work.
+The current verison of scripts will give you some warns, you may ignore them.
+The scipt works with the alonged script growth2fig_manager.py.
+Please use the manager and it is not necessary to modify this script for working. 
 """
 
 import numpy as np
