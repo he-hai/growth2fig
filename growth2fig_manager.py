@@ -12,9 +12,9 @@ It has wells in columns, and time in rows. Data from Biotech machine is perfect 
 Please transpose data from Tecan.
 """
 
-from IPython import get_ipython
-get_ipython().magic('reset -sf')  # equal to clear in matlab
-get_ipython().magic('matplotlib qt')
+# from IPython import get_ipython
+# get_ipython().magic('reset -sf')  # equal to clear in matlab
+# get_ipython().magic('matplotlib qt')
 
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -25,10 +25,12 @@ experiment = pd.DataFrame() # DO NOT modify this.
 
 DataFileName = 'testingData.xlsx'  # data need to be prepared first in excel, and put it into the same folder.
 inc_OD = 0.02  # the starting OD in cuvette unit
-Figure_Type = 'all'
+# Figure_Type = 'all'
 # Figure_Type = 'mean'
-# Yscale = 'log'
-Yscale = 'linear'
+Figure_Type = 'errorbar'
+errb = 5  # plot error bars every 5 data points
+Yscale = 'log'
+# Yscale = 'linear'
 Xmax = None  # None or setting with number, in hours
 Ymax = None  # None or setting with number, OD
 WIN = 5  # in hours, period in which growth rate is measured
@@ -83,7 +85,7 @@ DATA = g2plot.cal(DataFileName, inc_OD)
 # ploting
 for column in experiment:
     g2plot.plot(DATA, experiment[column], WIN, TH, Figure_Type, Yscale, 
-                Xmax, Ymax, cmap, linestyles, savefig)
+                Xmax, Ymax, cmap, linestyles, savefig, errb)
 plt.show()
 
 #%% 

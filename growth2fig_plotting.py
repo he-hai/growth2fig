@@ -12,6 +12,9 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import linregress, sem
+from lmfit import minimize, Parameters
+
+plt.rc('axes', axisbelow=True)
 
 def get_valid_filename(s):
     """
@@ -27,15 +30,24 @@ def get_valid_filename(s):
     s = re.sub('mathit','',s)
     return re.sub('Delta_', 'D', s)
     
-def cal(file_name, inc_OD):   # calculation
+def cal(file_name, inc_OD):   # OD calibration
     data = pd.read_excel(file_name, sheet_name='Sheet1', index_col=0).dropna()
-    data.iloc[:,1:] = data.iloc[:,1:] - data.iloc[:,1:].values.min()
+    data.iloc[:,1:] = data.iloc[:,1:] - data.iloc[:,1:5].values.min()
     data.iloc[:,1:] = data.iloc[:,1:] / 0.23 + inc_OD  # for infinate
     time = data.index.values.astype(np.float) / 3600  # in hours
     data.index = time
     return data
-    
-def plot(data, MATS, WIN, TH, Figure_Type, Yscale, Xmax, Ymax, cmap, linestyles, savefig='no'):   
+
+def grfunc(params, x, y=None):
+    n0 = params['n0']
+    mu = params['mu']  # in hour
+
+    model = n0 * np.exp(mu * x)
+    if y is None:
+        return model
+    return model - y
+
+def plot(data, MATS, WIN, TH, Figure_Type, Yscale, Xmax, Ymax, cmap, linestyles, savefig='no', errb=1):   
     for mat in MATS.loc[2]:
         slope = np.array([])
         timePoint = np.array([])
@@ -49,9 +61,16 @@ def plot(data, MATS, WIN, TH, Figure_Type, Yscale, Xmax, Ymax, cmap, linestyles,
                 continue
             else:
                 rate_tmp = np.array([])
-                for tp in v.index:
-                    P = linregress(v.loc[tp:tp+WIN].index.values, np.log(v.loc[tp:tp+WIN]))
-                    rate_tmp = np.append(rate_tmp, P.slope) # more: intercept, rvalue, pvalue, stderr
+                for tp in v[0:v.index.max()-WIN].index:
+                    # P = linregress(v.loc[tp:tp+WIN].index.values, np.log(v.loc[tp:tp+WIN]))
+                    # rate_tmp = np.append(rate_tmp, P.slope) # more: intercept, rvalue, pvalue, stderr
+                    t = v.loc[tp:tp+WIN].index.to_numpy()
+                    od = v.loc[tp:tp+WIN].to_numpy()
+                    params = Parameters()
+                    params.add('n0', value=0.001)
+                    params.add('mu', value=0.001)
+                    fitres = minimize(grfunc, params, args=(t,), kws={'y': od})
+                    rate_tmp = np.append(rate_tmp, fitres.params['mu'].value)
                 slope = np.append(slope, np.nanmax(rate_tmp))
                 timePoint = np.append(timePoint,
                                       v.index.values[np.nanargmax(rate_tmp)])
@@ -79,7 +98,7 @@ def plot(data, MATS, WIN, TH, Figure_Type, Yscale, Xmax, Ymax, cmap, linestyles,
         else:
             MATS.loc[3][MATS.loc[2].index(mat)] = MATS.loc[3][MATS.loc[2].index(mat)] + ': NG'
     
-    # ploting all/mean
+    # ploting all/mean/errorbar
     fig, ax = plt.subplots(figsize=(12,10))
     lines = []
     line_num = []
@@ -94,6 +113,11 @@ def plot(data, MATS, WIN, TH, Figure_Type, Yscale, Xmax, Ymax, cmap, linestyles,
             line_num.append(len(lines))
             lines += ax.plot(data.index, data[mat],label=MATS[3][i],
                              linestyle=linestyles[i], color=cmap[i], linewidth=3)
+        elif Figure_Type == 'errorbar':
+            line_num.append(len(lines))
+            lines += ax.errorbar(data.index, data[mat].mean(axis=1),
+                                 yerr=data[mat].std(axis=1), capsize=4, barsabove=True, errorevery=errb,
+                                 linestyle=linestyles[i], color=cmap[i], linewidth=3,)
         
     ax.grid(which='major', axis='x', linewidth=1, linestyle='-', color='0.75')
     ax.grid(which='major', axis='y', linewidth=1, linestyle='--', color='0.75')
