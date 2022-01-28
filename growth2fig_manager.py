@@ -1,10 +1,11 @@
-#%%
+# %%
 # -*- coding: utf-8 -*-
 """
-@Author: Hai
+@Author: Hai; updated 2022-01-28
 The script works on Python 3, you may use VS code (higher than 1.35) in the interactive mode 
 or iPython IDE, such as Spyder.
-The script requires pandas, matplotlib, numpy, scipy and the alonged script 'growth2fig_plotting.py' to work.
+The script requires pandas, matplotlib, numpy, scipy, lmfit, openpyxl 
+and the alonged script 'growth2fig_plotting.py' to work.
 The current verison of scripts will give you some warns, you may ignore them.
 
 Your data should be prepared in excel first, in the format like the test data set.
@@ -25,13 +26,13 @@ experiment = pd.DataFrame() # DO NOT modify this.
 
 DataFileName = 'testingData.xlsx'  # data need to be prepared first in excel, and put it into the same folder.
 inc_OD = 0.02  # the starting OD in cuvette unit
-# Figure_Type = 'all'
+Figure_Type = 'all'
 # Figure_Type = 'mean'
-Figure_Type = 'errorbar'
-errb = 5  # plot error bars every 5 data points
+# Figure_Type = 'errorbar'
+errb = 5  # plot error bars every 5 data points; give a number even it's not needed
 Yscale = 'log'
 # Yscale = 'linear'
-Xmax = None  # None or setting with number, in hours
+Xmax = 40  # None or setting with number, in hours
 Ymax = None  # None or setting with number, OD
 WIN = 5  # in hours, period in which growth rate is measured
 TH = 0.05  # Maximum OD below this value is NO GROWTH
@@ -85,7 +86,7 @@ DATA = g2plot.cal(DataFileName, inc_OD)
 # ploting
 for column in experiment:
     g2plot.plot(DATA, experiment[column], WIN, TH, Figure_Type, Yscale, 
-                Xmax, Ymax, cmap, linestyles, savefig, errb)
+                Xmax, Ymax, cmap, linestyles, savefig, errb)    
 plt.show()
 
 #%% 

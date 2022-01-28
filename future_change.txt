@@ -1,0 +1,2 @@
+1 optimize workflow, calibration -> data, -> viewplate, experiment setting -> ploting, -> change plot setting, -> save
+2 put experiment setting in class
