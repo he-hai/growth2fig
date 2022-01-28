@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-@Author: Hai
-The script works on Python >= 3.6 and requires pandas, matplotlib, numpy and scipy to work.
+@Author: Hai; updated 2022-01-28
+The script works on Python >= 3.6 and requires pandas, matplotlib, numpy, scipy, 
+lmfit, and openpyxl to work.
+
 The current verison of scripts will give you some warns, you may ignore them.
 The scipt works with the alonged script growth2fig_manager.py.
 Please use the manager and it is not necessary to modify this script for working. 
@@ -11,7 +13,7 @@ import re
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from scipy.stats import linregress, sem
+# from scipy.stats import linregress, sem
 from lmfit import minimize, Parameters
 
 plt.rc('axes', axisbelow=True)
@@ -31,7 +33,7 @@ def get_valid_filename(s):
     return re.sub('Delta_', 'D', s)
     
 def cal(file_name, inc_OD):   # OD calibration
-    data = pd.read_excel(file_name, sheet_name='Sheet1', index_col=0).dropna()
+    data = pd.read_excel(file_name, sheet_name='Sheet1', index_col=0, engine='openpyxl').dropna()
     data.iloc[:,1:] = data.iloc[:,1:] - data.iloc[:,1:5].values.min()
     data.iloc[:,1:] = data.iloc[:,1:] / 0.23 + inc_OD  # for infinate
     time = data.index.values.astype(np.float) / 3600  # in hours
@@ -53,7 +55,7 @@ def plot(data, MATS, WIN, TH, Figure_Type, Yscale, Xmax, Ymax, cmap, linestyles,
         timePoint = np.array([])
         biomassYield = np.array([])
         for id in mat:
-            v = data[id]
+            v = data.loc[0:Xmax,id]
             if np.amax(v) < TH:
                 slope = np.append(slope, 0.001)   # 0.001 is just a number small enough
                 timePoint = np.append(timePoint, np.inf)
