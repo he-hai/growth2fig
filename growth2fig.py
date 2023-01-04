@@ -2,10 +2,13 @@
 import numpy as np 
 import pandas as pd 
 from matplotlib import pyplot as plt 
-from scipy.stats import linregress, sem
+from scipy.stats import linregress
 from lmfit import Model
 import warnings
 from functools import cached_property
+import re
+
+plt.rc('axes', axisbelow=True)
 
 class Plate():
     _plate_format = 96
@@ -221,13 +224,6 @@ class Experiment:
     def __init__(self, title:str):
         self._title = title
 
-    # @property
-    # def plate(self):
-    #     return type(self).plate
-    # @plate.setter
-    # def plate(self, plate: Plate):
-    #     self._plate = plate
-
     @property
     def title(self):
         return self._title
@@ -273,22 +269,31 @@ class Experiment:
         self._title = list(set_ups.values())[0]
         self._conditions = list(set_ups.keys())[1:]
         self._repl_well_ids = list(set_ups.values())[1:]
+    
+    @property
+    def treatments(self):
+        self._treatments=[]
+        for i in range(len(self.conditions)):
+            self._treatments.append(
+                Treatment(
+                self, self.conditions[i], self.repl_well_ids[i]
+            ))
+        return self._treatments
 
     @cached_property
     def result_rep(self):
         '''Result report in pd.DataFrame'''
         results = pd.DataFrame()
-        for i in range(len(self.conditions)):
+        for t in self.treatments:
             result = pd.DataFrame.from_dict(
-                Treatment(
-                    self, self.conditions[i], self.repl_well_ids[i]
-                ).result, orient='index'
+                t.result, orient='index'
             ).T
             results=pd.concat([results,result])
         return results
 
-    def plot(self,):
-        pass 
+    @classmethod
+    def plot(cls):
+        Plot(cls).plot()
 
 class Treatment():
     def __init__(
@@ -302,9 +307,6 @@ class Treatment():
     @property
     def experiment(self):
         return self._experiment 
-    # @experiment.setter
-    # def experiment(self, experiment:Experiment):
-    #     self._experiment = experiment
 
     @property
     def plate(self):
@@ -313,29 +315,10 @@ class Treatment():
     @property
     def condition(self):
         return self._condition
-    # @condition.setter
-    # def condition(self, condition: str):
-    #     self._condition = condition
     
     @property
     def well_ids(self):
         return self._well_ids
-    # @well_ids.setter
-    # def well_ids(self, well_ids: tuple):
-    #     self._well_ids = well_ids
-
-    # @property
-    # def wells(self):
-    #     self._wells = []
-    #     for id in self.well_ids:
-    #         self._well = np.append(
-    #             self._wells, Well(self.plate,id)
-    #         )
-    #     return self._wells
-
-    # @wells.setter
-    # def wells(self, wells):
-    #     self._wells = wells
 
     @cached_property
     def gps(self):
@@ -375,13 +358,8 @@ class Treatment():
         }
 
     @classmethod
-    def plot(
-        cls, color, linestyle='-', 
-        figure_type='mean', yscale='log',
-        ymax=None,
-    ):
-        '''Plot from treatments'''
-        pass 
+    def plot(cls):
+        Plot(cls).plot()
 
 class Well:
     def __init__(self, plate: Plate, id:str):
@@ -447,4 +425,222 @@ class Well:
     @property
     def gps(self):
         '''growth parameters'''
-        return np.append(self._gps, self.max_OD)
+        return self._gps.append(self.max_OD)
+
+class Plot():
+    figure_type = 'all'  # 'all', 'mean' or 'patch'
+    yscale = 'log'  #  'log' or 'linear'
+    ymax = None  # None or OD value
+    format = None  # 'eps','png' or None 
+    linestyles = ['-','-','-','-','-','-','-','-','-','-'] # 10 solid lines
+    cmap = ['k', 'b', 'r','g','c','m',      
+        'y','saddlebrown','orange','olive']   # 10 colors 
+
+    def __init__(self, obj):
+        self.obj = obj
+    
+    @property
+    def plate(self):
+        '''Only support ONE plate!'''
+        if isinstance(self.obj, list):
+        # the first obj plate
+            return self.obj[0].plate 
+        else:
+        # Experiment, Treatment, or Well
+            return self.obj.plate
+        
+    @property
+    def x(self):  # Time 
+        return self.plate.time
+
+    @staticmethod
+    def get_well_od(obj: Well):
+        return obj.od.to_frame()
+
+    @staticmethod
+    def get_t_od(obj: Treatment):
+        return obj.plate.od.loc[
+            :,list(obj.well_ids)
+        ]
+    
+    @classmethod
+    def mean(cls, df: pd.DataFrame):
+        return df.mean(axis=1)
+
+    @classmethod
+    def calc_y1(cls, df: pd.DataFrame):
+        return cls.mean(df)+df.std(axis=1)
+    
+    @classmethod
+    def calc_y2(cls, df: pd.DataFrame):
+        return cls.mean(df)-df.std(axis=1)
+    
+    def get_od(self) -> list:
+        if isinstance(self.obj, Well):
+            return [self.get_well_od(self.obj)]
+        elif isinstance(self.obj, Treatment):
+            return [self.get_t_od(self.obj)]
+        elif isinstance(self.obj, Experiment):
+            od = []
+            for t in self.obj.treatments:
+                od.append(
+                    self.get_t_od(t)
+                )
+            return od 
+
+    @property 
+    def y(self):  # OD
+        self._y = []
+        if isinstance(self.obj, list):
+            for obj in self.obj:
+                self._y += self.get_od()
+        else:
+            self._y += self.get_od() 
+        return self._y
+
+    @classmethod
+    def plot_grid(cls, ax):
+        for key, value in {'x':'-','y':'--'}.items():
+            ax.grid(
+                which='major', axis=key, linewidth=1,
+                linestyle=value, color='0.75'
+            )
+    
+    def formatting(self, ax):
+        ax.tick_params(
+            which='both', direction='in', 
+            bottom=True, right=False, 
+            top=False, left=True, 
+            labelsize=14
+        )
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        
+        ax.set_yscale(self.yscale)
+        if self.yscale == 'log':
+            ax.set_ylim(top=self.ymax)
+        elif self.yscale == 'linear':
+            ax.set_ylim(bottom=0,top=self.ymax)
+        
+        ax.set_title(self.title, fontsize=24)
+        ax.set_ylabel('$OD_{600}$', fontsize=18)
+        ax.set_xlabel('Time (h)', fontsize=18)
+        ax.set_xlim(left=0, right=self.xmax)
+   
+    @property
+    def xmax(self):
+        return self.plate.time_upper 
+
+    def line(self, ax, y, i):
+        return ax.plot(
+            self.x, y, 
+            linestyle=self.linestyles[i], 
+            color=self.cmap[i], 
+            linewidth=3
+        )
+
+    def plot(self):
+        fig, ax = plt.subplots(figsize=(12,10))
+        lines = []
+        line_num = [] 
+        i = 0
+        self.plot_grid(ax)
+        for _y in self.y:
+            line_num.append(len(lines)) 
+            if self.figure_type == 'mean':
+                lines += self.line(
+                    ax, self.mean(_y), i
+                )
+            elif self.figure_type == 'all':
+                lines += self.line(
+                    ax, _y, i
+                )
+            elif self.figure_type == 'patch':
+                ax.fill_between(
+                    self.x, self.calc_y1(_y),
+                    self.calc_y2(_y),alpha=0.2,
+                    color=self.cmap[i]
+                )
+                lines += self.line(
+                    ax, self.mean(_y), i
+                )
+            i += 1
+
+        self.formatting(ax)
+        ax.legend([lines[i] for i in line_num], self.labels, fontsize=16)
+        self.save()
+
+    def save(self):
+        if self.format:
+            fname = get_valid_filename(self.title)
+            plt.savefig(
+                f'{self.figure_type}_{fname}',
+                dpi=300,
+                format=self.format,
+            )
+
+    @property
+    def labels(self):
+        self._labels = []
+        if isinstance(self.obj, list):
+            for obj in self.obj:
+                self._labels += self.get_label()
+        else:
+            self._labels += self.get_label()
+        return self._labels
+
+    def get_label(self) -> list:
+        if isinstance(self.obj, Well):
+            return [self.get_well_label(self.obj)]
+        elif isinstance(self.obj, Treatment):
+            return [self.get_t_label(self.obj)]
+        elif isinstance(self.obj, Experiment):
+            labels = []
+            for t in self.obj.treatments:
+                labels.append(
+                    self.get_t_label(t)
+                )
+            return labels
+
+    @staticmethod
+    def get_well_label(obj: Well):
+        gr, dt, tp, max_od = obj.gps
+        if dt < 200: 
+            label = f'{obj.id}: {dt:.1f}, {tp:.1f}, {max_od:.2f}'
+        else:
+            label = f'{obj.id}: NG'
+        return label
+
+    @staticmethod
+    def get_t_label(obj: Treatment):
+        cond = obj.condition
+        dt, dt_sd = obj.doubling_time
+        tp, tp_sd = obj.start_time
+        max_od, m_sd = obj.max_OD
+        if dt < 200:
+            label = f'{cond}: {dt:.1f}({dt_sd:.1f}), {tp:.1f}\
+                ({tp_sd:.1f}), {max_od:.2f}({m_sd:.2f})'
+        else:
+            label = f'{cond}: NG'
+        return label 
+    
+    @property
+    def title(self):
+        if isinstance(self.obj, Experiment):
+            return str(self.obj.title)
+        else:
+            return None
+
+def get_valid_filename(s):
+    """
+    Return the given string converted to a string that can be used for a clean
+    filename. Remove leading and trailing spaces; convert other spaces to
+    underscores; and remove anything that is not an alphanumeric, dash,
+    underscore, or dot.
+    Adapted from Django Framework, utils/text.py
+    """
+    s = str(s).splitlines()[0]
+    s = s.strip().replace(' ', '_')
+    s = re.sub(r'(?u)[^-\w.]', '', s)
+    s = re.sub('mathit','',s)
+    return re.sub('Delta_', 'D', s)
