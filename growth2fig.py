@@ -291,9 +291,8 @@ class Experiment:
             results=pd.concat([results,result])
         return results
 
-    @classmethod
-    def plot(cls):
-        Plot(cls).plot()
+    def plot(self):
+        Plot(self).plot()
 
 class Treatment():
     def __init__(
@@ -357,9 +356,8 @@ class Treatment():
             'Start time': self.start_time
         }
 
-    @classmethod
-    def plot(cls):
-        Plot(cls).plot()
+    def plot(self):
+        Plot(self).plot()
 
 class Well:
     def __init__(self, plate: Plate, id:str):
@@ -425,7 +423,10 @@ class Well:
     @property
     def gps(self):
         '''growth parameters'''
-        return self._gps.append(self.max_OD)
+        return np.append(self._gps, self.max_OD)
+
+    def plot(self):
+        Plot(self).plot()
 
 class Plot():
     figure_type = 'all'  # 'all', 'mean' or 'patch'
@@ -618,8 +619,8 @@ class Plot():
         tp, tp_sd = obj.start_time
         max_od, m_sd = obj.max_OD
         if dt < 200:
-            label = f'{cond}: {dt:.1f}({dt_sd:.1f}), {tp:.1f}\
-                ({tp_sd:.1f}), {max_od:.2f}({m_sd:.2f})'
+            label = f'{cond}: {dt:.1f}({dt_sd:.1f}), {tp:.1f}' \
+                + f'({tp_sd:.1f}), {max_od:.2f}({m_sd:.2f})'
         else:
             label = f'{cond}: NG'
         return label 
