@@ -20,7 +20,7 @@ class Plate():
  
     @cached_property
     def rawdata(self):
-        print('rawdata')
+        # print('rawdata')
         return pd.read_excel(
             self.filename, sheet_name=self.sheet_name,
             index_col=0, engine='openpyxl',
@@ -36,7 +36,7 @@ class Plate():
         
     @property
     def time(self):
-        print('time')
+        # print('time')
         return self.get_time(self.od)
 
     @property
@@ -45,7 +45,7 @@ class Plate():
 
     @time_upper.setter
     def time_upper(self, value: float):
-        print('time_upper')
+        # print('time_upper')
         if value <= 0: 
             raise ValueError('Value should be greater than 0')
         elif value > self.time_conv().max():
@@ -64,7 +64,7 @@ class Plate():
 
     @cached_property
     def od(self):
-        print('od calc')
+        # print('od calc')
         return self.od_cal()
     
     def od_cal(self):
@@ -115,7 +115,7 @@ class Plate():
         self.plot_plate(self.rawdata, self.plate_format)
     
     def view_plate(self):
-        print('view plate')
+        # print('view plate')
         self.plot_plate(self.od, self.plate_format)
 
     @property
@@ -131,7 +131,7 @@ class Plate():
         '''Collect growth parameters of the whole plate.
         :Start time: the start time point of a window 
         where calculated the final growth parameters'''
-        print('plate gps calc')
+        # print('plate gps calc')
         self._gps = pd.DataFrame(
             index=self.wells,
             columns=[
@@ -243,11 +243,11 @@ class Experiment:
         
     @property
     def repl_well_ids(self):
+        '''Replicates well IDs in a list of tuple, 
+        in the same order of conditions.'''
         return self._repl_well_ids
     @repl_well_ids.setter
     def repl_well_ids(self, repl_well_ids:list):
-        '''Replicates well IDs,
-        in the same order of conditions.'''
         self._repl_well_ids = repl_well_ids
 
     @property
@@ -272,13 +272,13 @@ class Experiment:
     
     @property
     def treatments(self):
-        self._treatments=[]
+        _treatments=[]
         for i in range(len(self.conditions)):
-            self._treatments.append(
+            _treatments.append(
                 Treatment(
                 self, self.conditions[i], self.repl_well_ids[i]
             ))
-        return self._treatments
+        return _treatments
 
     @cached_property
     def result_rep(self):
@@ -308,7 +308,7 @@ class Treatment():
         return self._experiment 
 
     @property
-    def plate(self):
+    def plate(self) -> Plate:
         return self.experiment.plate
 
     @property
@@ -321,39 +321,49 @@ class Treatment():
 
     @cached_property
     def gps(self):
-        return self.plate.plate_gps.loc[list(self.well_ids)]
-
-    def calc(self, param: str):
-        mean = self.gps[param].mean()
-        std = self.gps[param].std()
-        return (mean, std)
+        _gps = pd.DataFrame(
+            index=self.well_ids,
+            columns=[
+                'Growth rate',
+                'Doubling time',
+                'Start time',
+                'Max OD',
+            ]
+        )
+        for id in self.well_ids:
+            _gps.loc[id] = self.plate.get_well_gps(id)
+        
+        _gps.loc['mean']=_gps.mean()
+        _gps.loc['sd']=_gps.std()
+        # print('Treatment gps calc')
+        return _gps
 
     @property
     def growth_rate(self):
-        return self.calc('Growth rate')
+        return self.result.get('Growth rate')
 
     @property
     def doubling_time(self):
-        return self.calc('Doubling time')
+        return self.result.get('Doubling time')
 
     @property
     def max_OD(self):
-        return self.calc('Max OD')
+        return self.result.get('Max OD')
 
     @property 
     def start_time(self):
-        return self.calc('Start time')
+        return self.result.get('Start time')
 
     @property
-    def result(self):
+    def result(self) -> dict:
         return {
             'Experiment': self.experiment.title,
             'Condition': self.condition,
             'Wells': self.well_ids,
-            'Growth rate': self.growth_rate,
-            'Doubling time': self.doubling_time,
-            'Max OD': self.max_OD,
-            'Start time': self.start_time
+            'Growth rate': tuple(self.gps['Growth rate'].tail(2)),
+            'Doubling time': tuple(self.gps['Doubling time'].tail(2)),
+            'Max OD': tuple(self.gps['Max OD'].tail(2)),
+            'Start time': tuple(self.gps['Start time'].tail(2)),
         }
 
     def plot(self):
@@ -363,21 +373,20 @@ class Well:
     def __init__(self, plate: Plate, id:str):
         self._plate = plate
         self._id = id 
-        
-        self._gps = self.calc_gp(self.od)
 
     @staticmethod
     def calc_gp(df):
+        max_od = df.max()
         if np.amax(df) < Experiment.TH: 
-            gr = np.nan   # or a small number 1e-5 ?
-            time_point = np.nan  # np.inf ?
+            gr = np.nan  
+            time_point = np.nan 
         else: 
             grs = rolling_calc(df, Experiment.WIN, Experiment.model)
             gr = np.nanmax(grs)
             time_point = df.index.values[np.nanargmax(grs)]
-        print(f"WIN: {Experiment.WIN}, model: {Experiment.model}, TH: {Experiment.TH}")
+        # print(f"WIN: {Experiment.WIN}, model: {Experiment.model}, TH: {Experiment.TH}")
         dt = np.log(2) / gr
-        return [gr, dt, time_point]
+        return [gr, dt, time_point, max_od]
 
     @property
     def plate(self):
@@ -393,37 +402,37 @@ class Well:
     
     @cached_property
     def od(self):
-        print(f'well od {self.id}')
+        # print(f'well od {self.id}')
         return self.plate.od[self.id]
 
     @property
     def max_OD(self):
-        print(f'well max_OD {self.id}')
-        return self.od.max()
+        # print(f'well max_OD {self.id}')
+        return self.gps[3]
         
     @property
     def growth_rate(self):
         '''in hr-1'''
-        print(f'well gr {self.id}')
-        return self._gps[0]
+        # print(f'well gr {self.id}')
+        return self.gps[0]
         
     @property
     def doubling_time(self):
         '''in hour'''
-        print(f'well {self.id} doubling time')
-        return self._gps[1]
+        # print(f'well {self.id} doubling time')
+        return self.gps[1]
     
     @property
     def start_time(self):
         '''The start time point of a window 
         where calculated the final growth parameters.
         Hour'''
-        return self._gps[2]
+        return self.gps[2]
     
     @property
     def gps(self):
         '''growth parameters'''
-        return np.append(self._gps, self.max_OD)
+        return self.calc_gp(self.od)
 
     def plot(self):
         Plot(self).plot()
@@ -441,7 +450,7 @@ class Plot():
         self.obj = obj
     
     @property
-    def plate(self):
+    def plate(self) -> Plate:
         '''Only support ONE plate!'''
         if isinstance(self.obj, list):
         # the first obj plate
@@ -491,13 +500,13 @@ class Plot():
 
     @property 
     def y(self):  # OD
-        self._y = []
+        _y = []
         if isinstance(self.obj, list):
             for obj in self.obj:
-                self._y += self.get_od()
+                _y += self.get_od()
         else:
-            self._y += self.get_od() 
-        return self._y
+            _y += self.get_od() 
+        return _y
 
     @classmethod
     def plot_grid(cls, ax):
@@ -582,13 +591,13 @@ class Plot():
 
     @property
     def labels(self):
-        self._labels = []
+        _labels = []
         if isinstance(self.obj, list):
             for obj in self.obj:
-                self._labels += self.get_label()
+                _labels += self.get_label()
         else:
-            self._labels += self.get_label()
-        return self._labels
+            _labels += self.get_label()
+        return _labels
 
     def get_label(self) -> list:
         if isinstance(self.obj, Well):
