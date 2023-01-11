@@ -1,6 +1,8 @@
 # %%
 # -*- coding: utf-8 -*-
 from growth2fig import Experiment, Plate, Plot
+from matplotlib import pyplot as plt 
+import pylustrator 
 # %% 
 # global set ups
 Experiment.cvf = 0.23 
@@ -37,5 +39,7 @@ exps[1].repl_well_ids=[('B1','B2'), ('B3','B4'),('B5','B6')]
 exps[2].repl_well_ids=[('C1','C2'), ('C3','C4'),('C5','C6')]
 exps[3].repl_well_ids=[('D1','D2'), ('D3','D4'),('D5','D6')]
 
+pylustrator.start()
 for exp in exps: 
     exp.plot()
+plt.show()
