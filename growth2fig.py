@@ -9,6 +9,8 @@ from functools import cached_property
 import re
 
 plt.rc('axes', axisbelow=True)
+# pd.set_option("display.precision", 3)
+# pd.options.display.float_format = '{:.3f}'.format
 
 class Plate():
     _plate_format = 96
@@ -32,7 +34,7 @@ class Plate():
 
     @staticmethod
     def get_time(df: pd.DataFrame):
-        return df.index.values.astype(np.float)
+        return df.index.values.astype(float)
         
     @property
     def time(self):
@@ -550,7 +552,7 @@ class Plot():
         )
 
     def plot(self):
-        fig, ax = plt.subplots(figsize=(12,10))
+        fig, ax = plt.subplots(figsize=(10,8))
         lines = []
         line_num = [] 
         i = 0
