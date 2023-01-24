@@ -526,6 +526,12 @@ class Plot():
             top=False, left=True, 
             labelsize=14
         )
+        ax.tick_params(
+            axis='both',length=12,which='major'
+        )
+        ax.tick_params(
+            axis='both',length=7.5,which='minor'
+        )
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         
