@@ -75,7 +75,7 @@ class Plate():
         if self.cvf == 1:
             od = self.rawdata
         else:
-            od = self.rawdata.iloc[:,1:] - self.rawdata.iloc[:,1:5].values.min()
+            od = self.rawdata.iloc[:,1:] - self.rawdata.iloc[0:5,1:].values.min()
             od = od / self.cvf + self.ini_OD
         od.index = self.time_conv()
 
