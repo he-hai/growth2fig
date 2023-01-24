@@ -559,7 +559,7 @@ class Plot():
             self.x, y, 
             linestyle=self.linestyles[i], 
             color=self.cmap[i], 
-            linewidth=3
+            linewidth=3,zorder=2.02+0.02*i
         )
 
     def plot(self):
@@ -583,6 +583,7 @@ class Plot():
                     self.x, self.calc_y1(_y),
                     self.calc_y2(_y),alpha=0.2,
                     color=self.cmap[i],lw=0,
+                    zorder=2.01+0.02*i
                 )
                 lines += self.line(
                     ax, self.mean(_y), i
