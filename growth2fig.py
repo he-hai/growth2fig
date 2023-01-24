@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np 
 import pandas as pd 
+import matplotlib
 from matplotlib import pyplot as plt 
 from scipy.stats import linregress
 from lmfit import Model
@@ -571,7 +572,7 @@ class Plot():
                 ax.fill_between(
                     self.x, self.calc_y1(_y),
                     self.calc_y2(_y),alpha=0.2,
-                    color=self.cmap[i]
+                    color=self.cmap[i],lw=0,
                 )
                 lines += self.line(
                     ax, self.mean(_y), i
@@ -656,3 +657,7 @@ def get_valid_filename(s):
     s = re.sub(r'(?u)[^-\w.]', '', s)
     s = re.sub('mathit','',s)
     return re.sub('Delta_', 'D', s)
+
+def trans_cmap(cmap,alpha):
+    cmap_rgba=matplotlib.colors.to_rgba_array(cmap)
+    return 1-alpha*(1-cmap_rgba)
