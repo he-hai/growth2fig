@@ -518,6 +518,7 @@ class Plot():
                 which='major', axis=key, linewidth=1,
                 linestyle=value, color='0.75'
             )
+        ax.grid(which='minor',axis='y',lw=1,ls=':',color='0.5')
     
     def formatting(self, ax):
         ax.tick_params(
