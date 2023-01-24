@@ -75,7 +75,10 @@ class Plate():
         if self.cvf == 1:
             od = self.rawdata
         else:
-            od = self.rawdata.iloc[:,1:] - self.rawdata.iloc[0:5,1:].values.min()
+            ## blank with one well for the whole plate 
+            # od = self.rawdata.iloc[:,1:] - self.rawdata.iloc[0:5,1:].values.min()
+            ## blank each well individually 
+            od = self.rawdata.iloc[:,1:] - self.rawdata.iloc[0:5,1:].min()
             od = od / self.cvf + self.ini_OD
         od.index = self.time_conv()
 
