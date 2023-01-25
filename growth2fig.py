@@ -595,10 +595,17 @@ class Plot():
         self.save()
 
     def save(self):
-        if self.format:
-            fname = get_valid_filename(self.title)
+        fname = get_valid_filename(self.title)
+        if self.format == 'eps':
+            warnings.warn("The .eps file is fake but actually in PDF format.")
             plt.savefig(
-                f'{self.figure_type}_{fname}',
+                f'{self.figure_type}_{fname}.eps',
+                dpi=300,
+                format='pdf',
+            )
+        elif self.format:
+            plt.savefig(
+                f'{self.figure_type}_{fname}.{self.format}',
                 dpi=300,
                 format=self.format,
             )
