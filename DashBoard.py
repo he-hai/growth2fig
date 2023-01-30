@@ -1,5 +1,6 @@
 # %%
 # -*- coding: utf-8 -*-
+import numpy as np 
 from growth2fig import Experiment, Plate, Plot
 from matplotlib import pyplot as plt 
 import pylustrator 
@@ -17,6 +18,7 @@ Plot.figure_type='all'
 # Plot.figure_type='patch'
 Plot.yscale='log'
 # Plot.yscale='linear'
+Plot.ymin=0   # 0, None, or a OD value 
 Plot.ymax=None  # None or a OD value
 Plot.format=None  # 'eps','png', or None
 # %% 
@@ -38,6 +40,13 @@ exps[0].repl_well_ids=[('A1','A2'), ('A3','A4'),('A5','A6')]
 exps[1].repl_well_ids=[('B1','B2'), ('B3','B4'),('B5','B6')]
 exps[2].repl_well_ids=[('C1','C2'), ('C3','C4'),('C5','C6')]
 exps[3].repl_well_ids=[('D1','D2'), ('D3','D4'),('D5','D6')]
+
+Plot.linestyles = ['-','-','-','-','-','-','-','-','--','--','--','--','--','--','--','--']
+Plot.cmap = np.array([[197,1,4],[196,108,2],[175,196,2],[67,196,2],[3,195,153],[3,130,195],[4,24,195],[0,0,0],
+    [197,1,4],[196,108,2],[175,196,2],[67,196,2],[3,195,153],[3,130,195],[4,24,195],[0,0,0]])/255
+
+# df = Experiment.plate.plate_gps
+# df.to_excel('plate_gps.xlsx')
 
 pylustrator.start()
 for exp in exps: 

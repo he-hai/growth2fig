@@ -447,6 +447,7 @@ class Plot():
     figure_type = 'all'  # 'all', 'mean' or 'patch'
     yscale = 'log'  #  'log' or 'linear'
     ymax = None  # None or OD value
+    ymin = 0 
     format = None  # 'eps','png' or None 
     linestyles = ['-','-','-','-','-','-','-','-','-','-'] # 10 solid lines
     cmap = ['k', 'b', 'r','g','c','m',      
@@ -541,9 +542,9 @@ class Plot():
         
         ax.set_yscale(self.yscale)
         if self.yscale == 'log':
-            ax.set_ylim(top=self.ymax)
+            ax.set_ylim(bottom=self.ymin,top=self.ymax)
         elif self.yscale == 'linear':
-            ax.set_ylim(bottom=0,top=self.ymax)
+            ax.set_ylim(bottom=self.ymin,top=self.ymax)
         
         ax.set_title(self.title, fontsize=24)
         ax.set_ylabel('$OD_{600}$', fontsize=18)
