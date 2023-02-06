@@ -447,7 +447,7 @@ class Plot():
     figure_type = 'all'  # 'all', 'mean' or 'patch'
     yscale = 'log'  #  'log' or 'linear'
     ymax = None  # None or OD value
-    ymin = 0 
+    ymin = 0   # None, 0 or OD value
     format = None  # 'eps','png' or None 
     linestyles = ['-','-','-','-','-','-','-','-','-','-'] # 10 solid lines
     cmap = ['k', 'b', 'r','g','c','m',      
@@ -640,7 +640,7 @@ class Plot():
         if dt < 200: 
             label = f'{obj.id}: {dt:.1f}, {tp:.1f}, {max_od:.2f}'
         else:
-            label = f'{obj.id}: NG'
+            label = f'{obj.id}: NG, {max_od:.2f}'
         return label
 
     @staticmethod
@@ -653,7 +653,7 @@ class Plot():
             label = f'{cond}: {dt:.1f}({dt_sd:.1f}), {tp:.1f}' \
                 + f'({tp_sd:.1f}), {max_od:.2f}({m_sd:.2f})'
         else:
-            label = f'{cond}: NG'
+            label = f'{cond}: NG, {max_od:.2f}({m_sd:.2f})'
         return label 
     
     @property
