@@ -8,7 +8,6 @@ import pylustrator
 # global set ups
 Experiment.cvf = 0.23 
 Experiment.ini_OD = 0.02
-Experiment.model ='linear'  # linear, exponential or log
 Experiment.WIN = 5
 Experiment.TH = 0.05
 

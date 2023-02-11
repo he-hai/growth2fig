@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib
 from matplotlib import pyplot as plt 
 from scipy.stats import linregress
-from lmfit import Model
 import warnings
 from functools import cached_property
 import re
@@ -171,48 +170,22 @@ class Plate():
         # in hour
         return self.plate_gps['Start time']
 
-def exp_gr_func(t, mu, n0):
-    '''Exponential growth function
-    :params t: time
-    :params n0: initial OD 
-    :params mu: growth rate
-    '''
-    return n0 * np.exp(mu * t)  # equivilent to n0*2^(t/g)
-    ### return n0 * (1 + mu) ^ t # not an equivilent fuction
-
-exp_gr_model = Model(exp_gr_func, nan_policy='omit')
-exp_gr_model.set_param_hint('mu', value=1, min=1e-3)
-exp_gr_model.set_param_hint('n0', value=0.02, min=1e-3)
-
-def rolling_calc(df: pd.DataFrame, WIN, model):
+def rolling_calc(df: pd.DataFrame, WIN):
     '''Rolling calculations.
     WIN: rolling window, in hours
-    model options: 'linear' -> log-linear
-                   'exponential' or 'log' -> exponential
     '''
     gr = np.array([])
     for tp in df[0:df.index.max() - WIN].index:
         t = df.loc[tp:tp+WIN].index.to_numpy()
         od = df.loc[tp:tp+WIN].to_numpy()
-
-        r = gr_calc(t, od, model)
-        gr = np.append(gr, r)
-    return gr
-
-def gr_calc(t, od, model):
-    if model.lower() == 'linear':
         P = linregress(t, np.log(od))
-        r = P.slope
-    elif model.lower() in ['exponential','log']:
-        result = exp_gr_model.fit(od, t=t)
-        r = result.params['mu'].value
-    return r
+        gr = np.append(gr, P.slope)
+    return gr
 
 class Experiment:
     '''For defining experimental set-ups and plot.
-    model, WIN and TH must be defined at the beginning. 
+    WIN and TH must be defined at the beginning. 
     '''
-    model = 'linear'  # for data analysis
     WIN = 5   # in hours
     TH = 0.05
     plate = None  # Plate()
@@ -379,10 +352,9 @@ class Well:
             gr = np.nan  
             time_point = np.nan 
         else: 
-            grs = rolling_calc(df, Experiment.WIN, Experiment.model)
+            grs = rolling_calc(df, Experiment.WIN)
             gr = np.nanmax(grs)
             time_point = df.index.values[np.nanargmax(grs)]
-        # print(f"WIN: {Experiment.WIN}, model: {Experiment.model}, TH: {Experiment.TH}")
         dt = np.log(2) / gr
         return [gr, dt, time_point, max_od]
 
