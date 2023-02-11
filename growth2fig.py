@@ -200,11 +200,11 @@ def rolling_calc(df: pd.DataFrame, WIN, model):
     return gr
 
 def gr_calc(t, od, model):
-    if model == 'linear':
+    if model.lower() == 'linear':
         P = linregress(t, np.log(od))
         r = P.slope
-    elif model == 'exponential':
-        result = exp_gr_model.fit(od, t)
+    elif model.lower() in ['exponential','log']:
+        result = exp_gr_model.fit(od, t=t)
         r = result.params['mu'].value
     return r
 
@@ -218,14 +218,6 @@ class Experiment:
     plate = None  # Plate()
     cvf = 1 
     ini_OD = 0.02
-
-    if model == 'linear':
-        model = 'linear'
-    elif model == ('exponential' or 'log'):
-        model = 'exponential'
-    else:
-        raise ValueError('Model options are:\
-            linear and exponential (or log)')
 
     def __init__(self, title:str):
         self._title = title
