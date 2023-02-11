@@ -24,19 +24,10 @@ Experiment.cvf = 0.23
 Experiment.ini_OD = 0.02
 # %% [markdown]
 # ### Model for calculations. 
-# The module has two models, linear or exponential (log), 
-# for growth parameters calculation.    
-# 
-# The linear model, which is the default model, was described in 
-# [He *et al*., 2018](https://doi.org/10.1021/acssynbio.8b00093).  
-# 
-# The exponential/log model fits data to $N_t = N_0 * e^{\mu * t}$
-# (or $N_t = N_0 * 2^{t/g}$). Where $\mu$ is growth rate, $t$ is time, 
-# $g$ is generation time or doubling time. 
-Experiment.model ='linear'
+# The module fits Time-log(OD) to linear regression for growth parameters calculation,
+# as described in [He *et al*., 2018](https://doi.org/10.1021/acssynbio.8b00093).  
+
 # %% [markdown]
-# Both models do rolling window calculations. 
-#    
 # The window size has a unit of hours. 
 Experiment.WIN = 5
 Experiment.TH = 0.05

@@ -10,7 +10,6 @@ The scripts have been tested in an environment with following packages:
 - pandas 1.3.4
 - matplotlib 3.5.1
 - seaborn 0.11.2
-- lmfit 1.0.1
 - openpyxl 3.0.6
 - scipy 1.10.0
 - pylustrator 1.2.1
