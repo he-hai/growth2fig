@@ -175,12 +175,15 @@ def rolling_calc(df: pd.DataFrame, WIN):
     WIN: rolling window, in hours
     '''
     gr = np.array([])
-    for tp in df[0:df.index.max() - WIN].index:
-        t = df.loc[tp:tp+WIN].index.to_numpy()
-        od = df.loc[tp:tp+WIN].to_numpy()
-        P = linregress(t, np.log(od))
-        gr = np.append(gr, P.slope)
+    for i in range(df.size - WIN + 1):
+        t = df.iloc[i:i+WIN].index.to_numpy()
+        od = df.iloc[i:i+WIN].to_numpy()
+        gr = np.append(gr, gr_calc(t,od))
     return gr
+
+def gr_calc(t,od): 
+    P = linregress(t, np.log(od))
+    return P.slope
 
 class Experiment:
     '''For defining experimental set-ups and plot.
@@ -345,19 +348,6 @@ class Well:
         self._plate = plate
         self._id = id 
 
-    @staticmethod
-    def calc_gp(df):
-        max_od = df.max()
-        if np.amax(df) < Experiment.TH: 
-            gr = np.nan  
-            time_point = np.nan 
-        else: 
-            grs = rolling_calc(df, Experiment.WIN)
-            gr = np.nanmax(grs)
-            time_point = df.index.values[np.nanargmax(grs)]
-        dt = np.log(2) / gr
-        return [gr, dt, time_point, max_od]
-
     @property
     def plate(self):
         return self._plate
@@ -365,15 +355,64 @@ class Well:
     @property
     def id(self):
         return self._id
-
-    @property
-    def rawdata(self):
-        pass 
     
     @cached_property
     def od(self):
         # print(f'well od {self.id}')
         return self.plate.od[self.id]
+
+    def get_valid_ods(self):
+        _od = self.od[self.od >= Experiment.TH]
+        idx1 = _od.index[0]
+        idx2 = _od.index[-1]
+        return self.od[idx1:idx2], idx1
+    
+    def get_max(self): 
+        max_od = self.od.max()
+        idx = self.od.idxmax()
+        return max_od, idx
+    
+    def win_calc(self):
+        WIN = np.ceil(Experiment.WIN/(
+            (self.od.index[11] - self.od.index[1])/10
+        ))
+        if WIN < 5: 
+            raise ValueError(
+                'The given Experiment.WIN is too small.' + \
+                f'Only {WIN} data points are in the window.'
+            )
+        else: 
+            return int(WIN)
+
+    def calc_gp(self):
+        TH = Experiment.TH 
+        WIN=self.win_calc()
+        
+        (max_od, idx_max) = self.get_max()
+        gr = np.nan  
+        time_point = np.nan
+        
+        if max_od >= TH: 
+            (df, idx1) = self.get_valid_ods()
+            
+            if df[idx1:idx_max].size >= WIN: 
+                grs = rolling_calc(df, WIN)
+                gr = np.amax(grs)
+                time_point = df.index.values[np.argmax(grs)]
+            elif df[idx1:idx_max].size >= 5: 
+                warnings.warn(
+                    f"The given time window {Experiment.WIN} hours is probably too large for well {self.id}. " + \
+                        "Use data points between TH and max OD (left side).", UserWarning
+                )
+                gr = gr_calc(
+                    df[idx1:idx_max].index.to_numpy(),
+                    df[idx1:idx_max].to_numpy()
+                )
+                time_point = idx1
+            else: 
+                return [gr, np.nan, time_point, max_od]
+        dt = np.log(2) / gr
+        return [gr, dt, time_point, max_od]
 
     @property
     def max_OD(self):
@@ -402,7 +441,7 @@ class Well:
     @property
     def gps(self):
         '''growth parameters'''
-        return self.calc_gp(self.od)
+        return self.calc_gp()
 
     def plot(self):
         Plot(self).plot()
