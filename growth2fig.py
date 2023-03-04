@@ -265,8 +265,8 @@ class Experiment:
             results=pd.concat([results,result])
         return results
 
-    def plot(self):
-        Plot(self).plot()
+    def plot(self,source=False):
+        Plot(self).plot(source)
 
 class Treatment():
     def __init__(
@@ -340,8 +340,8 @@ class Treatment():
             'Start time': tuple(self.gps['Start time'].tail(2)),
         }
 
-    def plot(self):
-        Plot(self).plot()
+    def plot(self,source=False):
+        Plot(self).plot(source)
 
 class Well:
     def __init__(self, plate: Plate, id:str):
@@ -443,8 +443,8 @@ class Well:
         '''growth parameters'''
         return self.calc_gp()
 
-    def plot(self):
-        Plot(self).plot()
+    def plot(self,source=False):
+        Plot(self).plot(source)
 
 class Plot():
     figure_type = 'all'  # 'all', 'mean' or 'patch'
@@ -566,7 +566,7 @@ class Plot():
             linewidth=3,zorder=2.02+0.02*i
         )
 
-    def plot(self):
+    def plot(self, source=False):
         fig, ax = plt.subplots(figsize=(10,8))
         lines = []
         line_num = [] 
@@ -596,6 +596,11 @@ class Plot():
 
         self.formatting(ax)
         ax.legend([lines[i] for i in line_num], self.labels, fontsize=16)
+        if source: 
+            ax.text(
+                0,0,s=self.plate.filename,
+                fontsize=15,transform=plt.gcf().transFigure
+            )
         self.save()
 
     def save(self):

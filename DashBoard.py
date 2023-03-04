@@ -49,5 +49,5 @@ Plot.cmap = np.array([[197,1,4],[196,108,2],[175,196,2],[67,196,2],[3,195,153],[
 
 pylustrator.start()
 for exp in exps: 
-    exp.plot()
+    exp.plot(source=True)
 plt.show()
