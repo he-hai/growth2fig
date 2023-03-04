@@ -265,8 +265,8 @@ class Experiment:
             results=pd.concat([results,result])
         return results
 
-    def plot(self,source=False):
-        Plot(self).plot(source)
+    def plot(self,gps=False,source=False):
+        Plot(self).plot(gps,source)
 
 class Treatment():
     def __init__(
@@ -340,8 +340,8 @@ class Treatment():
             'Start time': tuple(self.gps['Start time'].tail(2)),
         }
 
-    def plot(self,source=False):
-        Plot(self).plot(source)
+    def plot(self,gps=False,source=False):
+        Plot(self).plot(gps,source)
 
 class Well:
     def __init__(self, plate: Plate, id:str):
@@ -443,8 +443,8 @@ class Well:
         '''growth parameters'''
         return self.calc_gp()
 
-    def plot(self,source=False):
-        Plot(self).plot(source)
+    def plot(self,gps=False,source=False):
+        Plot(self).plot(gps,source)
 
 class Plot():
     figure_type = 'all'  # 'all', 'mean' or 'patch'
@@ -566,7 +566,11 @@ class Plot():
             linewidth=3,zorder=2.02+0.02*i
         )
 
-    def plot(self, source=False):
+    def plot(self, gps=False, source=False):
+        '''plot function
+        :gps: bool, True to get growth parameters in legend
+        :source: bool, True to show source data
+        '''
         fig, ax = plt.subplots(figsize=(10,8))
         lines = []
         line_num = [] 
@@ -595,7 +599,7 @@ class Plot():
             i += 1
 
         self.formatting(ax)
-        ax.legend([lines[i] for i in line_num], self.labels, fontsize=16)
+        ax.legend([lines[i] for i in line_num], self.labels(gps), fontsize=16)
         if source: 
             ax.text(
                 0,0,s=self.plate.filename,
@@ -619,49 +623,53 @@ class Plot():
                 format=self.format,
             )
 
-    @property
-    def labels(self):
+    # @property
+    def labels(self, gps:bool):
         _labels = []
         if isinstance(self.obj, list):
             for obj in self.obj:
-                _labels += self.get_label()
+                _labels += self.get_label(gps)
         else:
-            _labels += self.get_label()
+            _labels += self.get_label(gps)
         return _labels
 
-    def get_label(self) -> list:
+    def get_label(self, gps) -> list:
         if isinstance(self.obj, Well):
-            return [self.get_well_label(self.obj)]
+            return [self.get_well_label(self.obj,gps)]
         elif isinstance(self.obj, Treatment):
-            return [self.get_t_label(self.obj)]
+            return [self.get_t_label(self.obj,gps)]
         elif isinstance(self.obj, Experiment):
             labels = []
             for t in self.obj.treatments:
                 labels.append(
-                    self.get_t_label(t)
+                    self.get_t_label(t,gps)
                 )
             return labels
 
     @staticmethod
-    def get_well_label(obj: Well):
-        gr, dt, tp, max_od = obj.gps
-        if dt < 200: 
-            label = f'{obj.id}: {dt:.1f}, {tp:.1f}, {max_od:.2f}'
-        else:
-            label = f'{obj.id}: NG, {max_od:.2f}'
+    def get_well_label(obj: Well, gps):
+        label=f'{obj.id}'
+        if gps: 
+            gr, dt, tp, max_od = obj.gps
+            if dt < 200: 
+                label = f'{label}: {dt:.1f}, {tp:.1f}, {max_od:.2f}'
+            else:
+                label = f'{label}: NG, {max_od:.2f}'
         return label
 
     @staticmethod
-    def get_t_label(obj: Treatment):
+    def get_t_label(obj: Treatment, gps):
         cond = obj.condition
-        dt, dt_sd = obj.doubling_time
-        tp, tp_sd = obj.start_time
-        max_od, m_sd = obj.max_OD
-        if dt < 200:
-            label = f'{cond}: {dt:.1f}({dt_sd:.1f}), {tp:.1f}' \
-                + f'({tp_sd:.1f}), {max_od:.2f}({m_sd:.2f})'
-        else:
-            label = f'{cond}: NG, {max_od:.2f}({m_sd:.2f})'
+        label=f'{cond}'
+        if gps: 
+            dt, dt_sd = obj.doubling_time
+            tp, tp_sd = obj.start_time
+            max_od, m_sd = obj.max_OD
+            if dt < 200:
+                label = f'{label}: {dt:.1f}({dt_sd:.1f}), {tp:.1f}' \
+                    + f'({tp_sd:.1f}), {max_od:.2f}({m_sd:.2f})'
+            else:
+                label = f'{label}: NG, {max_od:.2f}({m_sd:.2f})'
         return label 
     
     @property
@@ -685,6 +693,6 @@ def get_valid_filename(s):
     s = re.sub('mathit','',s)
     return re.sub('Delta_', 'D', s)
 
-def trans_cmap(cmap,alpha):
-    cmap_rgba=matplotlib.colors.to_rgba_array(cmap)
-    return 1-alpha*(1-cmap_rgba)
+# def trans_cmap(cmap,alpha):
+#     cmap_rgba=matplotlib.colors.to_rgba_array(cmap)
+#     return 1-alpha*(1-cmap_rgba)
