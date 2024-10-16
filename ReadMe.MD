@@ -1,4 +1,4 @@
-This repository contains module for growth curve ploting and growth parameters calculation for microplate. 
+This repository contains module for growth curve ploting and growth parameters calculation for microplate. Please cite [He et al. _Nature Communications_ 2024](https://doi.org/10.1038/s41467-024-53156-x)
 
 The [demo](./demo.ipynb) contains documentation of the module. 
 
