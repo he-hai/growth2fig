@@ -1,9 +1,14 @@
 # %%
 # -*- coding: utf-8 -*-
+import os
 import numpy as np 
 from growth2fig import Experiment, Plate, Plot
 from matplotlib import pyplot as plt 
-import pylustrator 
+import pylustrator
+
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 # %% 
 # global set ups
 Experiment.cvf = 0.23 
