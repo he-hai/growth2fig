@@ -687,7 +687,7 @@ def get_valid_filename(s):
     underscore, or dot.
     Adapted from Django Framework, utils/text.py
     """
-    s = str(s).splitlines()[0]
+    # s = str(s).splitlines()[0]
     s = s.strip().replace(' ', '_')
     s = re.sub(r'(?u)[^-\w.]', '', s)
     s = re.sub('mathit','',s)
